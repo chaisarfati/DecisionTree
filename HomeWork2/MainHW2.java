@@ -20,7 +20,7 @@ public class MainHW2 {
 
 		return inputReader;
 	}
-	
+
 	/**
 	 * Sets the class index as the last attribute.
 	 * @param fileName
@@ -34,12 +34,15 @@ public class MainHW2 {
 		data.setClassIndex(data.numAttributes() - 1);
 		return data;
 	}
-	
+
 	public static void main(String[] args) throws Exception {
 		Instances trainingCancer = loadData("cancer_train.txt");
 		Instances testingCancer = loadData("cancer_test.txt");
 		Instances validationCancer = loadData("cancer_validation.txt");
-		
+
+        DecisionTree tree = new DecisionTree(true);
+        tree.buildClassifier(trainingCancer);
+
         //TODO: complete the Main method
 	}
 }
