@@ -41,8 +41,41 @@ public class MainHW2 {
 		Instances validationCancer = loadData("cancer_validation.txt");
 
         DecisionTree tree = new DecisionTree(true);
-        tree.buildClassifier(trainingCancer);
 
-        //TODO: complete the Main method
-	}
+
+            Instances[] instances = tree.splitSet(trainingCancer, 2);
+        for (Instances i :
+                instances) {
+            System.out.println("num instances : " + i.numInstances());
+            System.out.println("entropy : " + tree.calcEntropy(DecisionTree.probaForEachItem(i)));
+            System.out.println("index to split in : " + tree.findOptimalIndex(i));
+            System.out.println();
+        }
+        System.out.println("$$$$$------$$$$");
+        Instances[] inss = tree.splitSet(instances[2], 3);
+
+        for (Instances i :
+                inss) {
+            System.out.println("num instances : " + i.numInstances());
+            System.out.println("entropy : " + tree.calcEntropy(DecisionTree.probaForEachItem(i)));
+            System.out.println("index to split in : " + tree.findOptimalIndex(i));
+            System.out.println();
+        }
+
+        System.out.println("******-------------*******");
+        Instances[] inss2 = tree.splitSet(instances[3], 0);
+
+        for (Instances i :
+                inss2) {
+            System.out.println("num instances : " + i.numInstances());
+            System.out.println("entropy : " + tree.calcEntropy(DecisionTree.probaForEachItem(i)));
+            System.out.println("index to split in : " + tree.findOptimalIndex(i));
+            System.out.println();
+        }
+
+        tree.buildClassifier(trainingCancer);
+        System.out.println(tree.rootNode.attributeIndex);
+        System.out.println(tree.rootNode.children[1].attributeIndex);
+
+    }
 }

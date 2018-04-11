@@ -14,58 +14,71 @@ class Node {
 }
 
 public class DecisionTree implements Classifier {
-	private Node rootNode;
+	public Node rootNode;
     private boolean measureWithEntropy;
 
     public DecisionTree(boolean measureWithEntropy) {
+        this.rootNode = new Node();
+        rootNode.parent = null;
         this.measureWithEntropy = measureWithEntropy;
     }
 
     @Override
 	public void buildClassifier(Instances arg0) throws Exception {
-        rootNode = new Node();
-        rootNode.parent = null;
         buildTree(rootNode, arg0);
 	}
 
 
     public void buildTree(Node node, Instances instances){
-
-        if(calcEntropy(probaForEachItem(instances))<=0.03){
+        double a = calcEntropy(probaForEachItem(instances));
+        if(calcEntropy(probaForEachItem(instances))==0){
             node.children = null;
             node.attributeIndex = -1;
             return;
         }
         node.attributeIndex = findOptimalIndex(instances);
-        node.children = new Node[instances.attribute(node.attributeIndex).numValues()];
+
         Instances[] subset = splitSet(instances, node.attributeIndex);
+        int childLength = 0;
         for (int i = 0; i < subset.length; i++) {
+            if(subset[i].numInstances()!=0){
+                childLength++;
+            }
+        }
+        node.children = new Node[childLength];
+        for (int i = 0; i < node.children.length; i++) {
             node.children[i] = new Node();
             node.children[i].parent = node;
             buildTree(node.children[i], subset[i]);
         }
-
     }
-
 
     @Override
 	public double classifyInstance(Instance instance) {
         return 0;
     }
 
-
-
     public double calcEntropy(double[] probability){
+        if(probability == null){
+            return 0;
+        }
+
         double sum = 0;
         for (int i = 0; i < probability.length; i++) {
             if(probability[i] > 0) {
-                sum += probability[i] * (Math.log(probability[i]) / Math.log(2));
+                sum += probability[i] * (Math.log(probability[i])/Math.log(2));
             }
         }
-        return -sum;
+        double result = -1.0 * sum;
+        if(result==-0.0) result=0.0;
+        return result;
     }
 
     public double calcGini(double[] probability){
+        if(probability == null){
+            return 0;
+        }
+
         double sum = 0;
         for (int i = 0; i < probability.length; i++) {
             sum += Math.pow(probability[i],2);
@@ -87,13 +100,14 @@ public class DecisionTree implements Classifier {
     }
 
     public double informationGain(Instances set, int index){
+        double numInstances = set.numInstances();
         double impurityBefore = calcEntropy(probaForEachItem(set));
         double weightedAverageAfter = 0.0;
         Instances[] subset = splitSet(set, index);
 
         double weight = 0;
         for (int i = 0; i < set.attribute(index).numValues(); i++) {
-            weight = subset[i].numInstances()/(double)set.numInstances();
+            weight = subset[i].numInstances()/numInstances;
             weightedAverageAfter += weight * calcEntropy(probaForEachItem(subset[i]));
         }
         return impurityBefore - weightedAverageAfter;
@@ -102,7 +116,7 @@ public class DecisionTree implements Classifier {
 
     public static double[] probaForEachItem(Instances set){
         if(set.numInstances()==0){
-            return new double[2];
+            return null;
         }
         double fromClassA = 0, fromClassB = 0;
         for (int i = 0; i < set.numInstances(); i++) {
@@ -122,7 +136,7 @@ public class DecisionTree implements Classifier {
     public int findOptimalIndex(Instances instances){
         int index = 0;
         double max = informationGain(instances, index);
-        double currentInfo = 0;
+        double currentInfo;
         for (int i = 0; i < instances.numAttributes() - 1; i++) {
             currentInfo = informationGain(instances, i);
             if(max < currentInfo){
