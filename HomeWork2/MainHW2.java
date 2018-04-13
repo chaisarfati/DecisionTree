@@ -1,11 +1,13 @@
 package HomeWork2;
 
+import weka.core.Attribute;
 import weka.core.Instances;
 
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.ArrayList;
 
 public class MainHW2 {
 
@@ -39,43 +41,12 @@ public class MainHW2 {
 		Instances trainingCancer = loadData("cancer_train.txt");
 		Instances testingCancer = loadData("cancer_test.txt");
 		Instances validationCancer = loadData("cancer_validation.txt");
-
         DecisionTree tree = new DecisionTree(true);
-
-
-            Instances[] instances = tree.splitSet(trainingCancer, 2);
-        for (Instances i :
-                instances) {
-            System.out.println("num instances : " + i.numInstances());
-            System.out.println("entropy : " + tree.calcEntropy(DecisionTree.probaForEachItem(i)));
-            System.out.println("index to split in : " + tree.findOptimalIndex(i));
-            System.out.println();
+        tree.rootNode = new Node();
+        ArrayList<Attribute> list = new ArrayList<>();
+        for (int i = 0; i < trainingCancer.numAttributes()-1; i++) {
+            list.add(trainingCancer.attribute(i));
         }
-        System.out.println("$$$$$------$$$$");
-        Instances[] inss = tree.splitSet(instances[2], 3);
-
-        for (Instances i :
-                inss) {
-            System.out.println("num instances : " + i.numInstances());
-            System.out.println("entropy : " + tree.calcEntropy(DecisionTree.probaForEachItem(i)));
-            System.out.println("index to split in : " + tree.findOptimalIndex(i));
-            System.out.println();
-        }
-
-        System.out.println("******-------------*******");
-        Instances[] inss2 = tree.splitSet(instances[3], 0);
-
-        for (Instances i :
-                inss2) {
-            System.out.println("num instances : " + i.numInstances());
-            System.out.println("entropy : " + tree.calcEntropy(DecisionTree.probaForEachItem(i)));
-            System.out.println("index to split in : " + tree.findOptimalIndex(i));
-            System.out.println();
-        }
-
-        tree.buildClassifier(trainingCancer);
-        System.out.println(tree.rootNode.attributeIndex);
-        System.out.println(tree.rootNode.children[1].attributeIndex);
-
+        tree.id32(tree.rootNode, trainingCancer, list);
     }
 }
