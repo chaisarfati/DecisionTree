@@ -1,23 +1,19 @@
 package HomeWork2;
 
-import weka.core.Attribute;
 import weka.core.Instances;
-
-import java.io.IOException;
-import java.util.ArrayList;
 
 public class Test {
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws Exception {
         Instances vegetation = MainHW2.loadData("vegetation_train.txt");
-        ArrayList<Attribute> list = new ArrayList<>();
-        for (int i = 0; i < vegetation.numAttributes()-1; i++) {
-            list.add(vegetation.attribute(i));
-        }
+        System.out.println(vegetation.attribute(3).index());
+        System.out.println(vegetation.instance(0).classValue());
+        System.out.println(vegetation.instance(1).classValue());
+        System.out.println(vegetation.instance(2).classValue());
         DecisionTree tree = new DecisionTree(true);
-        tree.rootNode = new Node();
-        tree.id32(tree.rootNode, vegetation, list);
-        System.out.println(tree.);
+        tree.buildClassifier(vegetation);
+
+        System.out.println(tree.classifyInstance(vegetation.instance(6)));
     }
 
 }

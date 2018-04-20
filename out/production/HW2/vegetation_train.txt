@@ -1,6 +1,6 @@
 @relation vegetation
 @attribute 'stream' {'true', 'false'}
-@attribute 'slope' { 'steep', 'moderate', 'flat'}
+@attribute 'slope' { 'flat', 'moderate', 'steep'}
 @attribute 'elevation' { 'low', 'medium', 'high', 'highest'}
 @attribute 'vegetation' {'chapparal' , 'riparian', 'conifer'}
 
