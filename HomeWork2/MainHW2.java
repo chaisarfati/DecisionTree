@@ -64,8 +64,6 @@ public class MainHW2 {
 
 
         // Construct the tree and prune it according to different p-values
-
-
         DecisionTree tree = (measureWithEntropy) ? treeUsingEntropy : treeUsingGini;
         System.out.println("Decision Tree with p_value of: " + 1);
         System.out.println("The train error of the decision tree is " + tree.calcAvgError(trainingCancer));
@@ -102,12 +100,13 @@ public class MainHW2 {
             }
         }
 
-
+        // Prints errors of the best pruned tree
         System.out.println("Best validation error at p_value = " + bestPVal);
-
         DecisionTree bestTree = new DecisionTree(measureWithEntropy);
         bestTree.buildAndPrune(bestIndex, bestTree.getRootNode(), trainingCancer, -1);
         System.out.println("Test error with best tree: " + bestTree.calcAvgError(testingCancer));
 
+        // Prints the tree
+        bestTree.printTree();
     }
 }

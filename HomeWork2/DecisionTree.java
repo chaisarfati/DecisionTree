@@ -1,12 +1,9 @@
 package HomeWork2;
 
 import weka.classifiers.Classifier;
-import weka.core.Attribute;
 import weka.core.Capabilities;
 import weka.core.Instance;
 import weka.core.Instances;
-
-import java.util.List;
 
 class Node {
 	Node[] children;
@@ -18,7 +15,6 @@ class Node {
 public class DecisionTree implements Classifier {
 	private Node rootNode;
     private boolean measureWithEntropy;
-    double heigthOfClassificationPath;
 
     public DecisionTree(boolean measureWithEntropy) {
         this.measureWithEntropy = measureWithEntropy;
@@ -30,7 +26,6 @@ public class DecisionTree implements Classifier {
         Node currentNode = rootNode;
         while (currentNode.children != null){
             currentNode = currentNode.children[(int)instance.value(currentNode.attributeIndex)];
-            this.heigthOfClassificationPath++;
         }
         return currentNode.returnValue;
     }
@@ -40,6 +35,13 @@ public class DecisionTree implements Classifier {
         buildTree(rootNode, arg0, -1);
     }
 
+    /**
+     * Returns an array containing maximumHeight at index 0
+     * and averageHeight at index 1
+     *
+     * @param instances
+     * @return
+     */
     public double[] maxAndAvgHeight(Instances instances){
         double[] result = new double[2];
         int max = 0;
@@ -61,6 +63,8 @@ public class DecisionTree implements Classifier {
         return result;
     }
 
+
+
     /**
      * Build the tree considering instances as the
      * training data and operates pre-pruning using
@@ -75,9 +79,10 @@ public class DecisionTree implements Classifier {
         double dispersion = (measureWithEntropy) ? calcEntropy(probaForEachItem(instances))
                 : calcGini(probaForEachItem(instances));
 
+
         if(instances.numInstances()==0){
             node.children = null;
-            node.attributeIndex = -1;
+            node.attributeIndex = -4;
             node.returnValue = node.parent.returnValue;
             return;
         }else if(dispersion == minDispersion){
@@ -95,13 +100,13 @@ public class DecisionTree implements Classifier {
             node.attributeIndex = findOptimalIndex(instances);
 
             double chiSquare = calcChiSquare(instances, node.attributeIndex);
-            int df = instances.attribute(node.attributeIndex).numValues() - 1;
+            Instances[] l = clearSet(splitSet(instances, node.attributeIndex));
+            double df = l.length - 1;
 
             // Chi-square condition of splitting
-            if(chiSquare <= chiSquareTable()[p_value][df]){
+            if(chiSquare <= chiSquareTable()[p_value][(int)df]){
                 node.children = null;
                 node.attributeIndex = -1;
-                node.returnValue = majorityTarget(instances);
                 return;
             }
 
@@ -116,34 +121,6 @@ public class DecisionTree implements Classifier {
         }
     }
 
-    /**
-     * Calculates the max height of a tree and the average height of a tree which has this.root as its root based on the instances.
-     * Note!! Not necessarily the true height of tree because based on classifications.
-     * Uses heigthOfClassificationPath
-     * @param instances object containing instances which the tree classifies
-     * @return double[] first entry is the max height of the tree and the second entry is the average height of the tree
-     */
-    public double[] treeheight(Instances instances) {
-        double[] lengthPathInstance  = new double[instances.numInstances()];
-        double[] result = new double[2];
-        double maxHeight = 0;
-        double sumHeights = 0;
-
-        for(int i = 0; i < instances.numInstances(); i++) {
-            //length of path of the classification of an instance
-            this.heigthOfClassificationPath = 0;
-            classifyInstance(instances.instance(i));
-            lengthPathInstance[i] = this.heigthOfClassificationPath;
-        }
-        this.heigthOfClassificationPath = 0;
-        for (double pathLength : lengthPathInstance) {
-            maxHeight = Math.max(pathLength, maxHeight);
-            sumHeights += pathLength;
-        }
-        result[0] = maxHeight;
-        result[1] = sumHeights / instances.numInstances();
-        return result;
-    }
 
     /**
      * Build the tree considering instances as the training
@@ -157,15 +134,15 @@ public class DecisionTree implements Classifier {
         double dispersion = (measureWithEntropy) ? calcEntropy(probaForEachItem(instances))
                 : calcGini(probaForEachItem(instances));
 
-        if(instances.numInstances()==0){
-            node.children = null;
-            node.attributeIndex = -1;
-            node.returnValue = node.parent.returnValue;
-            return;
-        }else if(dispersion == previousDispersion){
+        if(dispersion == previousDispersion){
             node.children = null;
             node.attributeIndex = -1;
             node.returnValue = majorityTarget(instances);
+            return;
+        }else if(instances.numInstances() == 0){
+            node.children = null;
+            node.attributeIndex = -4;
+            node.returnValue = node.parent.returnValue;
             return;
         }else if(dispersion == 0.0){
             node.children = null;
@@ -194,7 +171,7 @@ public class DecisionTree implements Classifier {
      * @param attributeIndex
      * @return
      */
-    private Instances[] splitSet(Instances set, int attributeIndex){
+    public Instances[] splitSet(Instances set, int attributeIndex){
         Instances[] result = new Instances[set.attribute(attributeIndex).numValues()];
         for (int i = 0; i < result.length; i++) {
             String currentValue = set.attribute(attributeIndex).value(i);
@@ -206,6 +183,61 @@ public class DecisionTree implements Classifier {
             }
         }
         return result;
+    }
+
+    /**
+     * Returns an array containing the instances of set
+     * that are not empty
+     *
+     * @param set
+     * @return
+     */
+    public static Instances[] clearSet(Instances[] set){
+        int childLength = 0;
+        for (int i = 0; i < set.length; i++) {
+            if(set[i].numInstances()!=0){
+                childLength++;
+            }
+        }
+        Instances[] result = new Instances[childLength];
+        int j = 0;
+        for (int i = 0; i < set.length; i++) {
+            if(set[i].numInstances()!=0){
+                result[j] = set[i];
+                j++;
+            }
+        }
+        return result;
+    }
+
+
+    /**
+     * Prints this tree
+     */
+    public void printTree(){
+        printTree(rootNode, "  ");
+    }
+    /* Actual printing recursion*/
+    private void printTree(Node node, String spaces){
+        if(node.parent == null){
+            System.out.println("Root");
+            System.out.println("Returning value: " + node.returnValue);
+
+        }
+        for (int i = 0; i < node.children.length; i++) {
+            // If the splitting training set is not empty
+            if(node.children[i].attributeIndex != -4) {
+                System.out.println(spaces + "If attribute " + node.attributeIndex + " = " + i);
+            }else{ // Else do not print it as said in piazza
+                continue;
+            }
+            if (node.children[i].attributeIndex != -1){
+                System.out.println(spaces + "Returning value: " + node.returnValue);
+                printTree(node.children[i], spaces + "  ");
+            }else{
+                System.out.println(spaces + "  " + "Leaf. Returning value: " + node.children[i].returnValue);
+            }
+        }
     }
 
 
@@ -237,7 +269,11 @@ public class DecisionTree implements Classifier {
         return (double)result;
     }
 
-
+    /**
+     * Returns the chiSquareTable
+     *
+     * @return
+     */
     public double[][] chiSquareTable(){
         double[][] res = {
                 // 0.75
@@ -264,7 +300,7 @@ public class DecisionTree implements Classifier {
      * @param set
      * @return setOfProbabilities
      */
-    public static double[] probaForEachItem(Instances set){
+    private static double[] probaForEachItem(Instances set){
         int numInstances = set.numInstances();
         if(numInstances==0){
             return null;
@@ -360,30 +396,7 @@ public class DecisionTree implements Classifier {
         return impurityBefore - weightedAverageAfter;
     }
 
-   
 
-    /**
-     * Returns the index of the attribute of the list that will
-     * best split the given dataset instances according to the
-     * result of the informationGain() method
-     *
-     * @param instances
-     * @param attributes
-     * @return
-     */
-    public int findOptimalIndex(Instances instances, List<Attribute> attributes){
-        int index = attributes.get(0).index();
-        double max = calcGain(instances, index, measureWithEntropy);
-        double currentInfo;
-        for (int i = 1; i < attributes.size(); i++) {
-            currentInfo = calcGain(instances, attributes.get(i).index(), measureWithEntropy);
-            if(max < currentInfo){
-                max = currentInfo;
-                index = attributes.get(i).index();
-            }
-        }
-        return index;
-    }
 
     /**
      * Returns the index of an attribute of the instances set
@@ -396,7 +409,7 @@ public class DecisionTree implements Classifier {
     public int findOptimalIndex(Instances instances){
         int index = 0;
         double max = calcGain(instances, index, measureWithEntropy);
-        double currentInfo = 0;
+        double currentInfo;
         for (int i = 0; i < instances.numAttributes() - 1; i++) {
             currentInfo = calcGain(instances, i, measureWithEntropy);
             if(max < currentInfo){
@@ -406,7 +419,6 @@ public class DecisionTree implements Classifier {
         }
         return index;
     }
-
 
 
     /**
@@ -427,9 +439,9 @@ public class DecisionTree implements Classifier {
 
 
         for (int i = 0; i < numOfInstances; i++) {
-            if (instances.instance(i).classValue() == 0) {
+            if(instances.instance(i).classValue() == 0) {
                 py0++;
-            } else {
+            }else{
                 py1++;
             }
         }
@@ -463,6 +475,36 @@ public class DecisionTree implements Classifier {
         return result;
     }
 
+    /**
+     * Computes the average error of classifying the Instances
+     * set with this tree
+     *
+     * @param set
+     * @return
+     */
+    public double calcAvgError(Instances set){
+        double classMistakes = classificationMistakes(set);
+        double numInstances = set.numInstances();
+        return classMistakes/numInstances;
+    }
+
+    /**
+     * Returns the number of wrong classifications
+     * over the instances of the set
+     *
+     * @param set
+     * @return
+     */
+    private double classificationMistakes(Instances set){
+        double result = 0;
+        for (int i = 0; i < set.numInstances(); i++) {
+            if(classifyInstance(set.instance(i)) != set.instance(i).classValue()){
+                result++;
+            }
+        }
+        return result;
+    }
+
 
     @Override
 	public double[] distributionForInstance(Instance arg0) throws Exception {
@@ -479,37 +521,4 @@ public class DecisionTree implements Classifier {
     public Node getRootNode() {
         return rootNode;
     }
-
-
-
-    /**
-     * Computes the average error of classifying the Instances
-     * set with this tree
-     *
-     * @param set
-     * @return
-     */
-    public double calcAvgError(Instances set){
-        double classMistakes = classificationMistakes(set);
-        double numInstances = set.numInstances();
-        return classMistakes/numInstances;
-    }
-
-    /**
-     * Returns the number of mistaking classifications
-     * of the instances of the set
-     *
-     * @param set
-     * @return
-     */
-    private double classificationMistakes(Instances set){
-        double result = 0;
-        for (int i = 0; i < set.numInstances(); i++) {
-            if(classifyInstance(set.instance(i)) != set.instance(i).classValue()){
-                result++;
-            }
-        }
-        return result;
-    }
-
 }
